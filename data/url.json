@@ -2,6 +2,8 @@
   "urls": [
     "https://www.kalbela.com/rss/latest-rss.xml",
     "https://www.jagonews24.com/rss/rss.xml",
+    "https://bartabazar.com/feed",
+    "https://businessbangladesh.com.bd/feed",
     "https://www.dhakapost.com/rss/rss.xml"
   ]
 }
