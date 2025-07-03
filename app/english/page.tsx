@@ -1,7 +1,7 @@
 "use client"
 import { useState, useEffect, useCallback } from "react"
 import News from "@/components/News"
-import type { NewsItem } from "./api/rss/route"
+import type { NewsItem } from "../api/rss/route"
 
 export default function HomePage() {
   const [newsItems, setNewsItems] = useState<NewsItem[]>([])
@@ -12,7 +12,7 @@ export default function HomePage() {
 
   const fetchNews = useCallback(async (offset = 0, limit = 30) => {
     try {
-      const response = await fetch(`/api/rss?offset=${offset}&limit=${limit}&language=bangla`)
+      const response = await fetch(`/api/rss?offset=${offset}&limit=${limit}&language=english`)
       if (!response.ok) {
         throw new Error("Failed to fetch news")
       }

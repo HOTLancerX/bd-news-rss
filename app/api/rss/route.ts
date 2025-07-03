@@ -12,10 +12,9 @@ export interface NewsItem {
   guid: string
   image?: string
   domain: string
-  needsImage?: boolean // Flag to resolve later
+  needsImage?: boolean
 }
 
-// Extract og:image from HTML
 async function fetchOGImageFromPage(link: string): Promise<string | null> {
   try {
     const response = await fetch(link, {
@@ -35,7 +34,6 @@ async function fetchOGImageFromPage(link: string): Promise<string | null> {
   }
 }
 
-// Parse a single feed URL
 async function fetchRSSFeed(url: string): Promise<NewsItem[]> {
   try {
     const response = await fetch(url, {
@@ -86,7 +84,6 @@ async function fetchRSSFeed(url: string): Promise<NewsItem[]> {
   }
 }
 
-// Optional: Background image updater
 async function enrichItemsWithImages(items: NewsItem[]): Promise<NewsItem[]> {
   return Promise.all(
     items.map(async (item) => {
@@ -107,11 +104,18 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const offset = Number.parseInt(searchParams.get("offset") || "0")
     const limit = Number.parseInt(searchParams.get("limit") || "30")
+    const language = searchParams.get("language") || "bangla"
 
     const urlsData = await import("@/data/url.json")
-    const urls = urlsData.urls
+    const feeds = urlsData.feeds
 
-    const allFeeds = await Promise.all(urls.map(fetchRSSFeed))
+    // Filter feeds by language
+    const languageFeeds = feeds.find((feed: any) => feed.language === language)?.urls || []
+    if (languageFeeds.length === 0) {
+      return NextResponse.json({ items: [], hasMore: false, total: 0 })
+    }
+
+    const allFeeds = await Promise.all(languageFeeds.map(fetchRSSFeed))
 
     let allItems = allFeeds
       .flat()
@@ -126,8 +130,6 @@ export async function GET(request: NextRequest) {
       })
 
     const paginatedItems = allItems.slice(offset, offset + limit)
-
-    // Optional: Update images after data is processed
     const enrichedItems = await enrichItemsWithImages(paginatedItems)
 
     return NextResponse.json({

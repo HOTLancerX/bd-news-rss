@@ -1,13 +1,29 @@
 {
-  "urls": [
-    "https://www.kalbela.com/rss/latest-rss.xml",
-    "https://www.jagonews24.com/rss/rss.xml",
-    "https://bartabazar.com/feed",
-    "https://bangladeshtoday.net/feed",
-    "https://www.bd24live.com/bangla/feed",
-    "https://news24-bengali.com/kolkata/feed",
-    "https://businessbangladesh.com.bd/feed",
-    "https://www.tbsnews.net/bangla/rss.xml",
-    "https://www.dhakapost.com/rss/rss.xml"
+  "feeds": [
+    {
+      "language": "bangla",
+      "urls": [
+        "https://www.kalbela.com/rss/latest-rss.xml",
+        "https://www.jagonews24.com/rss/rss.xml",
+        "https://bartabazar.com/feed",
+        "https://bangladeshtoday.net/feed",
+        "https://www.bd24live.com/bangla/feed",
+        "https://news24-bengali.com/kolkata/feed",
+        "https://businessbangladesh.com.bd/feed",
+        "https://www.tbsnews.net/bangla/rss.xml",
+        "https://www.dhakapost.com/rss/rss.xml"
+      ]
+    },
+    {
+      "language": "english",
+      "urls": [
+        "https://www.theguardian.com/us/rss",
+        "https://qz.com/rss",
+        "https://moxie.foxnews.com/google-publisher/politics.xml",
+        "https://rollcall.com/feed",
+        "https://kffhealthnews.org/feed",
+        "https://thewest.com.au/rss"
+      ]
+    }
   ]
 }
