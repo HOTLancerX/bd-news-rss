@@ -1,0 +1,24 @@
+{
+  "urls": [
+    {
+      "sitemap": "https://www.pickaboo.com/sitemap/sitemap-1-2.xml",
+      "xpath": "//*[@id=\"__next\"]/main/div/div[1]/div/div/div[2]/div/div[6]/h2[1]",
+      "domain": "pickaboo.com"
+    },
+    {
+      "sitemap": "https://www.pickaboo.com/sitemap/sitemap-1-1.xml",
+      "xpath": "//*[@id=\"__next\"]/main/div/div[1]/div/div/div[2]/div/div[6]/h2[1]",
+      "domain": "pickaboo.com"
+    },
+    {
+      "sitemap": "https://www.ryans.com/product-sitemap.xml",
+      "xpath": "/html/body/div[3]/div[1]/div/div/div[2]/div/div[1]/div[1]/div[3]/div[1]/span/span/span[2]",
+      "domain": "ryans.com"
+    },
+    {
+      "sitemap": "https://www.daraz.com.bd/sitemap-product-all-1.xml.gz",
+      "xpath": "//*[@id=\"module_product_price_1\"]/div/div/span",
+      "domain": "daraz.com.bd"
+    }
+  ]
+}
