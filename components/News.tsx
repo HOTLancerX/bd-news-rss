@@ -115,9 +115,17 @@ export default function News({ item }: NewsItemProps) {
               {item.title}</h2>
             <div className="text-gray-700 leading-relaxed">
               {isExpanded ? (
-                <p className="whitespace-pre-line text-xl leading-10">{description}</p>
+                <p className="whitespace-pre-line text-xl leading-10"
+                  dangerouslySetInnerHTML={{
+                    __html: description,
+                  }}
+                />
               ) : (
-                <p className="whitespace-pre-line text-base line-clamp-1 md:line-clamp-3">{shortDescription}</p>
+                <p className="whitespace-pre-line text-base line-clamp-1 md:line-clamp-3"
+                  dangerouslySetInnerHTML={{
+                    __html: shortDescription,
+                  }}
+                />
               )}
             </div>
           </div>

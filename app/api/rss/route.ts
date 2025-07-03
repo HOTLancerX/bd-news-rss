@@ -14,11 +14,37 @@ export interface NewsItem {
   domain: string
 }
 
+// Get og:image from the <link> URL of the post
+async function fetchOGImageFromPage(link: string): Promise<string | null> {
+  try {
+    const response = await fetch(link, {
+      headers: {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
+      },
+      cache: "no-store",
+    })
+
+    if (!response.ok) return null
+
+    const html = await response.text()
+    const ogMatch = html.match(/<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i)
+
+    if (ogMatch?.[1]) {
+      return ogMatch[1]
+    }
+
+    return null
+  } catch (error) {
+    console.error(`Failed to fetch OG image from ${link}`, error)
+    return null
+  }
+}
+
 async function fetchRSSFeed(url: string): Promise<NewsItem[]> {
   try {
     const response = await fetch(url, {
       headers: {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
       },
     })
 
@@ -33,17 +59,35 @@ async function fetchRSSFeed(url: string): Promise<NewsItem[]> {
     const items = result?.rss?.channel?.[0]?.item || []
     const domain = new URL(url).hostname
 
-    return items
-      .map((item: any) => ({
-        title: item.title?.[0] || "",
-        link: item.link?.[0] || "",
-        description: item.description?.[0] || "",
-        pubDate: item.pubDate?.[0] || "",
-        guid: item.guid?.[0]?._ || item.guid?.[0] || "",
-        image: item["media:content"]?.[0]?.$?.url || "",
-        domain,
-      }))
-      .filter((item: NewsItem) => item.title && item.link)
+    const newsItems: NewsItem[] = await Promise.all(
+      items.map(async (item: any) => {
+        const title = item.title?.[0] || ""
+        const link = item.link?.[0] || ""
+        const pubDate = item.pubDate?.[0] || ""
+        const guid = item.guid?.[0]?._ || item.guid?.[0] || ""
+
+        const contentEncoded = item["content:encoded"]?.[0]?.trim()
+        const description = contentEncoded || item.description?.[0] || ""
+
+        let image = item["media:content"]?.[0]?.$?.url || ""
+
+        if (!image && link) {
+          image = await fetchOGImageFromPage(link) || ""
+        }
+
+        return {
+          title,
+          link,
+          description,
+          pubDate,
+          guid,
+          image,
+          domain,
+        }
+      })
+    )
+
+    return newsItems.filter((item: NewsItem) => item.title && item.link)
   } catch (error) {
     console.error(`Error fetching RSS feed ${url}:`, error)
     return []
@@ -56,31 +100,23 @@ export async function GET(request: NextRequest) {
     const offset = Number.parseInt(searchParams.get("offset") || "0")
     const limit = Number.parseInt(searchParams.get("limit") || "30")
 
-    // Import URLs from JSON file
     const urlsData = await import("@/data/url.json")
     const urls = urlsData.urls
 
-    // Fetch all RSS feeds
     const allFeeds = await Promise.all(urls.map((url) => fetchRSSFeed(url)))
 
-    // Combine and sort all items by date (latest first)
     const allItems = allFeeds
       .flat()
-      .filter((item) => item.pubDate) // Filter out items without dates
+      .filter((item) => item.pubDate)
       .sort((a, b) => {
         const dateA = new Date(a.pubDate).getTime()
         const dateB = new Date(b.pubDate).getTime()
-
-        // Handle invalid dates
         if (isNaN(dateA) && isNaN(dateB)) return 0
         if (isNaN(dateA)) return 1
         if (isNaN(dateB)) return -1
-
-        // Sort by newest first (descending order)
         return dateB - dateA
       })
 
-    // Apply pagination
     const paginatedItems = allItems.slice(offset, offset + limit)
 
     return NextResponse.json({
