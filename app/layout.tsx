@@ -16,8 +16,8 @@ export default function RootLayout({
     <html lang="en">
       <body className="bg-gray-200">
         <header>
-          <div className="flex items-center justify-between max-w-4xl mx-auto">
-            <h1 className="text-2xl font-bold text-gray-900 py-4 px-2 md:px-0">Bangla News Feed</h1>
+          <div className="flex items-center justify-between max-w-4xl mx-auto py-4 px-2 md:px-0">
+            <h1 className="text-2xl font-bold text-gray-900">News Feed</h1>
             <div className="flex items-center gap-2">
               <Link
                 href="/"
@@ -30,6 +30,12 @@ export default function RootLayout({
                 className="bg-white px-2 text-black"
               >
                 English
+              </Link>
+              <Link
+                href="/videos"
+                className="bg-white px-2 text-black"
+              >
+                Videos
               </Link>
             </div>
           </div>
