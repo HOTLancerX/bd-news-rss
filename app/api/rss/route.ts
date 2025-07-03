@@ -12,9 +12,10 @@ export interface NewsItem {
   guid: string
   image?: string
   domain: string
+  needsImage?: boolean // Flag to resolve later
 }
 
-// Get og:image from the <link> URL of the post
+// Extract og:image from HTML
 async function fetchOGImageFromPage(link: string): Promise<string | null> {
   try {
     const response = await fetch(link, {
@@ -28,18 +29,13 @@ async function fetchOGImageFromPage(link: string): Promise<string | null> {
 
     const html = await response.text()
     const ogMatch = html.match(/<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i)
-
-    if (ogMatch?.[1]) {
-      return ogMatch[1]
-    }
-
-    return null
-  } catch (error) {
-    console.error(`Failed to fetch OG image from ${link}`, error)
+    return ogMatch?.[1] || null
+  } catch {
     return null
   }
 }
 
+// Parse a single feed URL
 async function fetchRSSFeed(url: string): Promise<NewsItem[]> {
   try {
     const response = await fetch(url, {
@@ -59,39 +55,51 @@ async function fetchRSSFeed(url: string): Promise<NewsItem[]> {
     const items = result?.rss?.channel?.[0]?.item || []
     const domain = new URL(url).hostname
 
-    const newsItems: NewsItem[] = await Promise.all(
-      items.map(async (item: any) => {
-        const title = item.title?.[0] || ""
-        const link = item.link?.[0] || ""
-        const pubDate = item.pubDate?.[0] || ""
-        const guid = item.guid?.[0]?._ || item.guid?.[0] || ""
+    const newsItems: NewsItem[] = items.map((item: any) => {
+      const title = item.title?.[0] || ""
+      const link = item.link?.[0] || ""
+      const pubDate = item.pubDate?.[0] || ""
+      const guid = item.guid?.[0]?._ || item.guid?.[0] || ""
 
-        const contentEncoded = item["content:encoded"]?.[0]?.trim()
-        const description = contentEncoded || item.description?.[0] || ""
+      const contentEncoded = item["content:encoded"]?.[0]?.trim()
+      const description = contentEncoded || item.description?.[0] || ""
 
-        let image = item["media:content"]?.[0]?.$?.url || ""
+      const image = item["media:content"]?.[0]?.$?.url || ""
+      const needsImage = !image && !!link
 
-        if (!image && link) {
-          image = await fetchOGImageFromPage(link) || ""
-        }
-
-        return {
-          title,
-          link,
-          description,
-          pubDate,
-          guid,
-          image,
-          domain,
-        }
-      })
-    )
+      return {
+        title,
+        link,
+        description,
+        pubDate,
+        guid,
+        image,
+        domain,
+        needsImage,
+      }
+    })
 
     return newsItems.filter((item: NewsItem) => item.title && item.link)
   } catch (error) {
     console.error(`Error fetching RSS feed ${url}:`, error)
     return []
   }
+}
+
+// Optional: Background image updater
+async function enrichItemsWithImages(items: NewsItem[]): Promise<NewsItem[]> {
+  return Promise.all(
+    items.map(async (item) => {
+      if (!item.needsImage || !item.link) return item
+
+      const image = await fetchOGImageFromPage(item.link)
+      return {
+        ...item,
+        image: image || "",
+        needsImage: false,
+      }
+    })
+  )
 }
 
 export async function GET(request: NextRequest) {
@@ -103,9 +111,9 @@ export async function GET(request: NextRequest) {
     const urlsData = await import("@/data/url.json")
     const urls = urlsData.urls
 
-    const allFeeds = await Promise.all(urls.map((url) => fetchRSSFeed(url)))
+    const allFeeds = await Promise.all(urls.map(fetchRSSFeed))
 
-    const allItems = allFeeds
+    let allItems = allFeeds
       .flat()
       .filter((item) => item.pubDate)
       .sort((a, b) => {
@@ -119,8 +127,11 @@ export async function GET(request: NextRequest) {
 
     const paginatedItems = allItems.slice(offset, offset + limit)
 
+    // Optional: Update images after data is processed
+    const enrichedItems = await enrichItemsWithImages(paginatedItems)
+
     return NextResponse.json({
-      items: paginatedItems,
+      items: enrichedItems,
       hasMore: offset + limit < allItems.length,
       total: allItems.length,
     })
